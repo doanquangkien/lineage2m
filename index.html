@@ -4,11 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Quản lý phiên Logout L2M</title>
-
-<!-- =============================================================================== -->
-<!-- CSS -->
-<!-- Bạn có thể sao chép toàn bộ nội dung trong thẻ <style> vào file style.css -->
-<!-- =============================================================================== -->
 <style>
     :root {
       --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -242,10 +237,6 @@
 </head>
 <body>
 
-<!-- =============================================================================== -->
-<!-- HTML -->
-<!-- Bạn có thể sao chép toàn bộ nội dung trong thẻ <body> vào file index.html -->
-<!-- =============================================================================== -->
 <div class="header">
     <h1>🎮 Quản lý phiên Logout L2M</h1>
 </div>
@@ -326,16 +317,12 @@
     </div>
 </div>
 
-
-<!-- =============================================================================== -->
-<!-- JAVASCRIPT -->
-<!-- Bạn có thể sao chép toàn bộ nội dung trong thẻ <script> vào file script.js -->
-<!-- =============================================================================== -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
     const NUM_ACCOUNTS = 30;
     const STORAGE_KEY = 'l2mAccountManagerData_v2';
+    const MAX_HISTORY_PER_ACCOUNT = 100; // CÀI ĐẶT: Giới hạn số lượng bản ghi lịch sử
 
     const container = document.getElementById('accounts-container');
     const sessionModal = document.getElementById('session-modal');
@@ -349,7 +336,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedData = localStorage.getItem(STORAGE_KEY);
         if (savedData) {
             accountsData = JSON.parse(savedData);
-            // Ensure we have the correct number of accounts
             if (accountsData.length < NUM_ACCOUNTS) {
                  for (let i = accountsData.length + 1; i <= NUM_ACCOUNTS; i++) {
                     accountsData.push(createDefaultAccount(i));
@@ -543,7 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     container.addEventListener('keypress', e => {
         if(e.key === 'Enter' && e.target.classList.contains('account-name-input')) {
-            e.target.blur(); // Triggers focusout
+            e.target.blur();
         }
     });
 
@@ -601,6 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(account.history.length === 0) {
             historyContent.innerHTML = '<p>Chưa có lịch sử nào.</p>';
         } else {
+            // slice().reverse() để hiển thị bản ghi mới nhất lên đầu
             const historyList = account.history.slice().reverse().map(item => {
                 const startTime = new Date(item.startTime);
                 const date = `${startTime.getDate()}/${startTime.getMonth()+1}/${startTime.getFullYear()}`;
@@ -643,6 +630,12 @@ document.addEventListener('DOMContentLoaded', () => {
             timeLimitSeconds: session.timeLimitSeconds,
             location: session.location,
         });
+        
+        // ** TÍNH NĂNG MỚI: GIỚI HẠN LỊCH SỬ **
+        // Nếu lịch sử vượt quá giới hạn, xóa bản ghi cũ nhất (ở đầu mảng)
+        if (account.history.length > MAX_HISTORY_PER_ACCOUNT) {
+            account.history.shift(); 
+        }
         
         account.currentSession = null;
         saveData();

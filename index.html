@@ -1,44 +1,692 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Quản lý tài khoản Lineage2M</title>
-  
-  <!-- Dòng này liên kết tới tệp CSS của bạn -->
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quản lý phiên Logout L2M</title>
 
+<!-- =============================================================================== -->
+<!-- CSS -->
+<!-- Bạn có thể sao chép toàn bộ nội dung trong thẻ <style> vào file style.css -->
+<!-- =============================================================================== -->
+<style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --text-dark: #2d3748;
+      --text-light: #4a5568;
+      --text-white: #ffffff;
+      
+      /* State Colors */
+      --online-color: #48bb78;
+      --logging-out-color: #f6ad55;
+      --overtime-color: #f56565;
+      
+      --shadow-light: 0 8px 32px rgba(0,0,0,0.1);
+      --shadow-hover: 0 12px 40px rgba(0,0,0,0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    input, textarea {
+      user-select: text;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: var(--bg-gradient);
+      min-height: 100vh;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+      color: var(--text-white);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .header h1 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .stats-bar {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+      color: var(--text-white);
+      border: 1px solid rgba(255,255,255,0.2);
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .stat-item .stat-number { font-size: 22px; font-weight: 700; }
+    .stat-item .stat-label { font-size: 12px; opacity: 0.9; text-transform: uppercase; }
+
+    #accounts-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .account {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 20px;
+      border-top: 5px solid var(--online-color);
+      box-shadow: var(--shadow-light);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .account.logging-out { border-top-color: var(--logging-out-color); }
+    .account.overtime { 
+        border-top-color: var(--overtime-color); 
+        animation: pulse-red 2s infinite;
+    }
+
+    @keyframes pulse-red {
+        0% { box-shadow: var(--shadow-light), 0 0 0 0 rgba(245, 101, 101, 0.4); }
+        70% { box-shadow: var(--shadow-light), 0 0 0 10px rgba(245, 101, 101, 0); }
+        100% { box-shadow: var(--shadow-light), 0 0 0 0 rgba(245, 101, 101, 0); }
+    }
+
+
+    .account-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .account-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-dark);
+      cursor: pointer;
+    }
+    .account-name-input {
+      font-size: 18px;
+      font-weight: 600;
+      width: 100%;
+      border: 2px solid var(--logging-out-color);
+      border-radius: 8px;
+      padding: 8px;
+      display: none;
+    }
+
+    .account-info, .account-status {
+      font-size: 14px;
+      color: var(--text-light);
+      background: #f7fafc;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress {
+      height: 100%;
+      width: 0%;
+      background: var(--logging-out-color);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    .account.overtime .progress { background: var(--overtime-color); }
+
+    .account-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+    }
+    .btn {
+      flex-grow: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-start { background-color: var(--online-color); color: white; }
+    .btn-end { background-color: var(--overtime-color); color: white; }
+    .btn-history { background-color: #a0aec0; color: white; flex-grow: 0; }
+    .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(5px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 400px;
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.active .modal-content {
+        transform: translateY(0);
+    }
+    .modal-content h2 { margin-top: 0; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+    .form-group select, .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    #custom-location-group { display: none; margin-top: 10px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .modal-actions .btn { flex-grow: 0; padding: 10px 20px; }
+    .btn-confirm { background-color: #667eea; color: white; }
+    .btn-cancel { background-color: #e2e8f0; color: var(--text-dark); }
+    
+    #history-content {
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    #history-content ul { list-style: none; padding: 0; margin: 0; }
+    #history-content li {
+      background: #f7fafc;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      border-left: 4px solid #a0aec0;
+    }
+    #history-content li.overtime-record {
+      border-left-color: var(--overtime-color);
+    }
+    #history-content li strong { color: var(--text-dark); }
+</style>
 </head>
 <body>
-  <div class="header">
-    <h1>🎮 Quản lý tài khoản Lineage2M</h1>
-  </div>
 
-<!-- ======== PHẦN THÊM MỚI ======== -->
-  <div class="main-controls">
-    <button id="add-account-btn">➕ Thêm tài khoản mới</button>
-  </div>
-  <!-- ======== KẾT THÚC PHẦN THÊM MỚI ======== -->
+<!-- =============================================================================== -->
+<!-- HTML -->
+<!-- Bạn có thể sao chép toàn bộ nội dung trong thẻ <body> vào file index.html -->
+<!-- =============================================================================== -->
+<div class="header">
+    <h1>🎮 Quản lý phiên Logout L2M</h1>
+</div>
 
-  <div class="stats-bar">
+<div class="stats-bar">
     <div class="stat-item">
-      <div class="stat-number" id="total-accounts">20</div>
-      <div class="stat-label">Tài khoản</div>
+        <div class="stat-number" id="total-accounts-stat">0</div>
+        <div class="stat-label">Tổng số</div>
     </div>
     <div class="stat-item">
-      <div class="stat-number" id="logout-count">0</div>
-      <div class="stat-label">Đã logout</div>
+        <div class="stat-number" id="active-logout-stat">0</div>
+        <div class="stat-label">Đang Logout</div>
     </div>
     <div class="stat-item">
-      <div class="stat-number" id="interact-count">0</div>
-      <div class="stat-label">Đã tương tác</div>
+        <div class="stat-number" id="overtime-stat">0</div>
+        <div class="stat-label">Quá Giờ</div>
     </div>
-  </div>
+</div>
 
-  <div id="accounts-container"></div>
-  
-  <!-- Dòng này liên kết tới tệp JavaScript của bạn. Luôn đặt nó cuối thẻ <body> -->
-  <script src="script.js"></script>
+<div id="accounts-container">
+    <!-- Các thẻ tài khoản sẽ được JS chèn vào đây -->
+</div>
+
+<!-- Modal để bắt đầu phiên logout -->
+<div id="session-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 id="modal-title">Bắt đầu phiên Logout</h2>
+        <form id="session-form">
+            <input type="hidden" id="modal-account-id">
+            <div class="form-group">
+                <label for="time-limit">Thời gian cho phép</label>
+                <select id="time-limit" required>
+                    <option value="3600">1 giờ</option>
+                    <option value="7200">2 giờ</option>
+                    <option value="10800">3 giờ</option>
+                    <option value="14400">4 giờ</option>
+                    <option value="21600">6 giờ</option>
+                    <option value="custom">Tùy chỉnh (phút)</option>
+                </select>
+            </div>
+             <div class="form-group" id="custom-time-group" style="display: none;">
+                <label for="custom-time-limit">Nhập số phút</label>
+                <input type="number" id="custom-time-limit" placeholder="Ví dụ: 90">
+            </div>
+            <div class="form-group">
+                <label for="location">Vị trí Logout</label>
+                <select id="location" required>
+                    <option>Đảo Giao Tranh</option>
+                    <option>Pháo Đài</option>
+                    <option>Antharas</option>
+                    <option>Cruma</option>
+                    <option>Đền Undine</option>
+                    <option value="custom">Khác...</option>
+                </select>
+            </div>
+            <div class="form-group" id="custom-location-group">
+                <label for="custom-location">Nhập vị trí khác</label>
+                <input type="text" id="custom-location" placeholder="Tên bản đồ...">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-cancel" id="cancel-btn">Hủy</button>
+                <button type="submit" class="btn btn-confirm">Bắt đầu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal để xem lịch sử -->
+<div id="history-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 id="history-modal-title">Lịch sử Logout</h2>
+        <div id="history-content">
+            <!-- Lịch sử sẽ được JS chèn vào đây -->
+        </div>
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button type="button" class="btn btn-confirm" id="close-history-btn">Đóng</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- =============================================================================== -->
+<!-- JAVASCRIPT -->
+<!-- Bạn có thể sao chép toàn bộ nội dung trong thẻ <script> vào file script.js -->
+<!-- =============================================================================== -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const NUM_ACCOUNTS = 30;
+    const STORAGE_KEY = 'l2mAccountManagerData_v2';
+
+    const container = document.getElementById('accounts-container');
+    const sessionModal = document.getElementById('session-modal');
+    const historyModal = document.getElementById('history-modal');
+    const sessionForm = document.getElementById('session-form');
+
+    let accountsData = [];
+
+    // --- DATA MANAGEMENT ---
+    function loadData() {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+            accountsData = JSON.parse(savedData);
+            // Ensure we have the correct number of accounts
+            if (accountsData.length < NUM_ACCOUNTS) {
+                 for (let i = accountsData.length + 1; i <= NUM_ACCOUNTS; i++) {
+                    accountsData.push(createDefaultAccount(i));
+                }
+            } else if (accountsData.length > NUM_ACCOUNTS) {
+                accountsData = accountsData.slice(0, NUM_ACCOUNTS);
+            }
+        } else {
+            accountsData = [];
+            for (let i = 1; i <= NUM_ACCOUNTS; i++) {
+                accountsData.push(createDefaultAccount(i));
+            }
+        }
+        saveData();
+    }
+
+    function createDefaultAccount(index) {
+        return {
+            id: `acc${index}`,
+            name: `Tài khoản ${index}`,
+            currentSession: null,
+            history: []
+        };
+    }
+
+    function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(accountsData));
+    }
+    
+    function findAccount(id) {
+        return accountsData.find(acc => acc.id === id);
+    }
+    
+    // --- RENDERING ---
+    function renderAllAccounts() {
+        container.innerHTML = '';
+        accountsData.forEach(account => {
+            container.insertAdjacentHTML('beforeend', generateAccountHTML(account));
+        });
+        updateStats();
+    }
+
+    function generateAccountHTML(account) {
+        const { id, name, currentSession } = account;
+        const isLoggingOut = currentSession && currentSession.isActive;
+        let stateClass = '';
+        let infoHTML = '<div class="account-status">Trạng thái: <strong>Online</strong></div>';
+        let actionsHTML = `
+            <button class="btn btn-history" data-action="history" data-id="${id}">📜</button>
+            <button class="btn btn-start" data-action="start" data-id="${id}">Bắt đầu Logout</button>
+        `;
+
+        if (isLoggingOut) {
+            const { startTime, timeLimitSeconds, location } = currentSession;
+            const elapsedSeconds = (new Date() - new Date(startTime)) / 1000;
+            const isOvertime = elapsedSeconds >= timeLimitSeconds;
+            
+            stateClass = isOvertime ? 'overtime' : 'logging-out';
+            
+            const progressPercent = Math.min((elapsedSeconds / timeLimitSeconds) * 100, 100);
+
+            infoHTML = `
+                <div class="account-info">Tại: <strong>${location}</strong></div>
+                <div class="progress-bar">
+                    <div class="progress" style="width: ${progressPercent}%"></div>
+                </div>
+                <div class="account-status" id="timer-${id}">
+                    ${generateTimerText(elapsedSeconds, timeLimitSeconds)}
+                </div>
+            `;
+            actionsHTML = `
+                <button class="btn btn-history" data-action="history" data-id="${id}">📜</button>
+                <button class="btn btn-end" data-action="end" data-id="${id}">Kết thúc Logout</button>
+            `;
+        }
+        
+        return `
+            <div class="account ${stateClass}" id="${id}">
+                <div class="account-header">
+                    <span class="account-name" data-action="rename" data-id="${id}">${name}</span>
+                    <input type="text" class="account-name-input" value="${name}" data-id="${id}"/>
+                </div>
+                ${infoHTML}
+                <div class="account-actions">${actionsHTML}</div>
+            </div>
+        `;
+    }
+    
+    function rerenderAccount(id) {
+        const account = findAccount(id);
+        const element = document.getElementById(id);
+        if (element && account) {
+            element.outerHTML = generateAccountHTML(account);
+        }
+        updateStats();
+    }
+
+    // --- TIMERS & UPDATES ---
+    function formatTime(totalSeconds) {
+        if (totalSeconds < 0) totalSeconds = 0;
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = Math.floor(totalSeconds % 60);
+        return `${h > 0 ? h + ' giờ ' : ''}${m > 0 ? m + ' phút ' : ''}${s} giây`;
+    }
+
+    function generateTimerText(elapsed, limit) {
+        if (elapsed >= limit) {
+            return `Trạng thái: <strong style="color:var(--overtime-color)">Đã lố ${formatTime(elapsed - limit)}</strong>`;
+        } else {
+            return `Còn lại: <strong>${formatTime(limit - elapsed)}</strong>`;
+        }
+    }
+
+    function globalTimerUpdate() {
+        let activeCount = 0;
+        let overtimeCount = 0;
+        accountsData.forEach(account => {
+            if (account.currentSession && account.currentSession.isActive) {
+                activeCount++;
+                const timerElement = document.getElementById(`timer-${account.id}`);
+                const progressElement = document.querySelector(`#${account.id} .progress`);
+                
+                const elapsedSeconds = (new Date() - new Date(account.currentSession.startTime)) / 1000;
+                const limit = account.currentSession.timeLimitSeconds;
+                const isOvertime = elapsedSeconds >= limit;
+
+                if(isOvertime) overtimeCount++;
+                
+                if (timerElement) {
+                    timerElement.innerHTML = generateTimerText(elapsedSeconds, limit);
+                }
+                if (progressElement) {
+                    const progressPercent = Math.min((elapsedSeconds / limit) * 100, 100);
+                    progressElement.style.width = `${progressPercent}%`;
+                }
+                
+                const accountCard = document.getElementById(account.id);
+                if (isOvertime && !accountCard.classList.contains('overtime')) {
+                    accountCard.classList.remove('logging-out');
+                    accountCard.classList.add('overtime');
+                }
+            }
+        });
+        updateStats(activeCount, overtimeCount);
+    }
+    
+    function updateStats(active = null, overtime = null) {
+        if (active === null || overtime === null) {
+            active = accountsData.filter(acc => acc.currentSession?.isActive).length;
+            overtime = accountsData.filter(acc => {
+                if (!acc.currentSession?.isActive) return false;
+                const elapsed = (new Date() - new Date(acc.currentSession.startTime)) / 1000;
+                return elapsed >= acc.currentSession.timeLimitSeconds;
+            }).length;
+        }
+        document.getElementById('total-accounts-stat').textContent = NUM_ACCOUNTS;
+        document.getElementById('active-logout-stat').textContent = active;
+        document.getElementById('overtime-stat').textContent = overtime;
+    }
+
+    // --- EVENT HANDLERS ---
+    container.addEventListener('click', e => {
+        const target = e.target;
+        const action = target.dataset.action;
+        const id = target.dataset.id;
+
+        if (!action || !id) return;
+        
+        switch(action) {
+            case 'start':
+                showSessionModal(id);
+                break;
+            case 'end':
+                endSession(id);
+                break;
+            case 'history':
+                showHistoryModal(id);
+                break;
+            case 'rename':
+                enterRenameMode(id);
+                break;
+        }
+    });
+    
+    container.addEventListener('focusout', e => {
+        if(e.target.classList.contains('account-name-input')) {
+            exitRenameMode(e.target.dataset.id);
+        }
+    });
+
+    container.addEventListener('keypress', e => {
+        if(e.key === 'Enter' && e.target.classList.contains('account-name-input')) {
+            e.target.blur(); // Triggers focusout
+        }
+    });
+
+    // Session Modal Logic
+    function showSessionModal(id) {
+        sessionForm.reset();
+        document.getElementById('modal-account-id').value = id;
+        document.getElementById('custom-location-group').style.display = 'none';
+        document.getElementById('custom-time-group').style.display = 'none';
+        sessionModal.classList.add('active');
+    }
+
+    sessionForm.addEventListener('submit', e => {
+        e.preventDefault();
+        const id = document.getElementById('modal-account-id').value;
+        
+        let timeLimit = document.getElementById('time-limit').value;
+        if (timeLimit === 'custom') {
+            const customMinutes = document.getElementById('custom-time-limit').value;
+            timeLimit = parseInt(customMinutes, 10) * 60;
+        } else {
+            timeLimit = parseInt(timeLimit, 10);
+        }
+
+        let location = document.getElementById('location').value;
+        if (location === 'custom') {
+            location = document.getElementById('custom-location').value.trim();
+        }
+        
+        if (!timeLimit || !location) {
+            alert('Vui lòng điền đầy đủ thông tin.');
+            return;
+        }
+
+        startSession(id, timeLimit, location);
+        sessionModal.classList.remove('active');
+    });
+
+    document.getElementById('location').addEventListener('change', e => {
+        document.getElementById('custom-location-group').style.display = e.target.value === 'custom' ? 'block' : 'none';
+    });
+    
+    document.getElementById('time-limit').addEventListener('change', e => {
+        document.getElementById('custom-time-group').style.display = e.target.value === 'custom' ? 'block' : 'none';
+    });
+
+    document.getElementById('cancel-btn').addEventListener('click', () => sessionModal.classList.remove('active'));
+
+    // History Modal Logic
+    function showHistoryModal(id) {
+        const account = findAccount(id);
+        const historyContent = document.getElementById('history-content');
+        document.getElementById('history-modal-title').textContent = `Lịch sử: ${account.name}`;
+        
+        if(account.history.length === 0) {
+            historyContent.innerHTML = '<p>Chưa có lịch sử nào.</p>';
+        } else {
+            const historyList = account.history.slice().reverse().map(item => {
+                const startTime = new Date(item.startTime);
+                const date = `${startTime.getDate()}/${startTime.getMonth()+1}/${startTime.getFullYear()}`;
+                const time = `${String(startTime.getHours()).padStart(2,'0')}:${String(startTime.getMinutes()).padStart(2,'0')}`;
+                const duration = Math.round((new Date(item.endTime) - startTime) / 60000);
+                const overtimeClass = duration * 60 > item.timeLimitSeconds ? 'overtime-record' : '';
+                return `
+                  <li class="${overtimeClass}">
+                      <strong>${date} lúc ${time}</strong> - ${item.location}<br>
+                      Thời lượng: ${duration} phút
+                  </li>`;
+            }).join('');
+            historyContent.innerHTML = `<ul>${historyList}</ul>`;
+        }
+        historyModal.classList.add('active');
+    }
+    document.getElementById('close-history-btn').addEventListener('click', () => historyModal.classList.remove('active'));
+
+    // Session Logic
+    function startSession(id, timeLimitSeconds, location) {
+        const account = findAccount(id);
+        account.currentSession = {
+            isActive: true,
+            startTime: new Date().toISOString(),
+            timeLimitSeconds,
+            location
+        };
+        saveData();
+        rerenderAccount(id);
+    }
+    
+    function endSession(id) {
+        const account = findAccount(id);
+        if (!account.currentSession) return;
+        
+        const session = account.currentSession;
+        account.history.push({
+            startTime: session.startTime,
+            endTime: new Date().toISOString(),
+            timeLimitSeconds: session.timeLimitSeconds,
+            location: session.location,
+        });
+        
+        account.currentSession = null;
+        saveData();
+        rerenderAccount(id);
+    }
+    
+    // Rename Logic
+    function enterRenameMode(id) {
+        const card = document.getElementById(id);
+        const nameSpan = card.querySelector('.account-name');
+        const nameInput = card.querySelector('.account-name-input');
+        nameSpan.style.display = 'none';
+        nameInput.style.display = 'block';
+        nameInput.focus();
+        nameInput.select();
+    }
+    
+    function exitRenameMode(id) {
+        const card = document.getElementById(id);
+        const account = findAccount(id);
+        const nameSpan = card.querySelector('.account-name');
+        const nameInput = card.querySelector('.account-name-input');
+        
+        const newName = nameInput.value.trim();
+        if (newName && newName !== account.name) {
+            account.name = newName;
+            nameSpan.textContent = newName;
+            saveData();
+        }
+        
+        nameSpan.style.display = 'block';
+        nameInput.style.display = 'none';
+    }
+
+    // --- INITIALIZATION ---
+    function init() {
+        loadData();
+        renderAllAccounts();
+        setInterval(globalTimerUpdate, 1000);
+    }
+
+    init();
+});
+</script>
 
 </body>
 </html>

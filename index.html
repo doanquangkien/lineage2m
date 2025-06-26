@@ -8,7 +8,7 @@
 <style>
     :root {
       --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      --card-bg: rgba(255, 255, 255, 0.98);
+      --card-bg: rgba(255, 255, 255, 0.95);
       --text-dark: #2d3748;
       --text-light: #4a5568;
       --text-white: #ffffff;
@@ -18,8 +18,6 @@
       --overtime-color: #f56565;
       --delete-color: #c53030;
       --shadow-light: 0 8px 32px rgba(0,0,0,0.1);
-      --glow-blue: #3b82f6;
-      --glow-white: #ffffff;
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
     input, textarea { user-select: text; }
@@ -46,47 +44,25 @@
       display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px; max-width: 1200px; margin: 0 auto;
     }
-    
     .account {
-      padding: 3px;
-      background: transparent;
-      border-top: none;
-      position: relative;
-      border-radius: 20px;
-      box-shadow: none;
-      transition: all 0.3s ease;
-      overflow: hidden;
+      background: var(--card-bg); border-radius: 20px; padding: 20px;
+      border-top: 5px solid var(--online-color); box-shadow: var(--shadow-light);
+      transition: all 0.3s ease; display: flex; flex-direction: column; gap: 12px;
     }
-    
-    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .account.logging-out { border-top-color: var(--logging-out-color); }
+    .account.warning { border-top-color: var(--warning-color); animation: pulse-orange 1.5s infinite; }
+    .account.overtime { border-top-color: var(--overtime-color); animation: pulse-red 1.5s infinite; }
 
-    .account.is-active-session::before {
-        content: '';
-        position: absolute;
-        z-index: 0;
-        top: -50%; left: -50%;
-        width: 200%; height: 200%;
-        background-repeat: no-repeat;
-        animation: rotate 4s linear infinite;
-        background-image: conic-gradient(transparent, var(--glow-blue), var(--glow-white), transparent 40%);
+    @keyframes pulse-red {
+        0% { box-shadow: var(--shadow-light), 0 0 0 0 rgba(245, 101, 101, 0.4); }
+        70% { box-shadow: var(--shadow-light), 0 0 0 10px rgba(245, 101, 101, 0); }
+        100% { box-shadow: var(--shadow-light), 0 0 0 0 rgba(245, 101, 101, 0); }
     }
-
-    .account-inner-content {
-        background: var(--card-bg);
-        border-radius: 17px;
-        height: 100%;
-        padding: 20px;
-        position: relative;
-        z-index: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        border-top: 5px solid var(--online-color);
-        box-shadow: var(--shadow-light);
+    @keyframes pulse-orange {
+        0% { box-shadow: var(--shadow-light), 0 0 0 0 rgba(237, 137, 54, 0.4); }
+        70% { box-shadow: var(--shadow-light), 0 0 0 10px rgba(237, 137, 54, 0); }
+        100% { box-shadow: var(--shadow-light), 0 0 0 0 rgba(237, 137, 54, 0); }
     }
-    .logging-out .account-inner-content { border-top-color: var(--logging-out-color); }
-    .warning .account-inner-content { border-top-color: var(--warning-color); }
-    .overtime .account-inner-content { border-top-color: var(--overtime-color); }
 
     .account-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .account-name { font-size: 18px; font-weight: 600; color: var(--text-dark); cursor: pointer; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -96,8 +72,8 @@
     .account-info, .account-status { font-size: 14px; color: var(--text-light); background: #f7fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; }
     .progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
     .progress { height: 100%; width: 0%; background: var(--logging-out-color); border-radius: 4px; transition: width 0.5s ease; }
-    .warning .progress { background: var(--warning-color); }
-    .overtime .progress { background: var(--overtime-color); }
+    .account.warning .progress { background: var(--warning-color); }
+    .account.overtime .progress { background: var(--overtime-color); }
 
     .account-actions { display: flex; gap: 10px; margin-top: auto; }
     .btn { flex-grow: 1; padding: 12px; border: none; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease; }
@@ -164,15 +140,58 @@
     </div>
 </div>
 
-<div id="session-modal" class="modal-overlay"> <div class="modal-content"> <h2 id="modal-title">Bắt đầu Phiên</h2> <form id="session-form"> <input type="hidden" id="modal-account-id"> <div class="form-group"> <label>Thời gian cho phép</label> <div class="time-input-container"> <div class="time-input-group"> <input type="number" id="hours-input" min="0" value="1"> <label for="hours-input">Giờ</label> </div> <div class="time-input-group"> <input type="number" id="minutes-input" min="0" max="59" value="0"> <label for="minutes-input">Phút</label> </div> </div> <div class="time-quick-buttons"> <button type="button" onclick="addTime(60)">+1h</button> <button type="button" onclick="addTime(120)">+2h</button> <button type="button" onclick="addTime(30)">+30m</button> <button type="button" onclick="addTime(-30)">-30m</button> </div> </div> <div class="form-group"> <label for="location">Vị trí Logout</label> <select id="location" required></select> </div> <div class="modal-actions"> <button type="button" id="cancel-btn" class="btn btn-cancel">Hủy</button> <button type="submit" class="btn btn-confirm">Bắt đầu</button> </div> </form> </div> </div>
-<div id="history-modal" class="modal-overlay"> <div class="modal-content"> <h2 id="history-modal-title">Lịch sử Logout</h2> <div id="history-content"></div> <div class="modal-actions" style="margin-top: 20px;"> <button type="button" id="close-history-btn" class="btn btn-confirm">Đóng</button> </div> </div> </div>
+<div id="session-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 id="modal-title">Bắt đầu Phiên</h2>
+        <form id="session-form">
+            <input type="hidden" id="modal-account-id">
+            <div class="form-group">
+                <label>Thời gian cho phép</label>
+                <div class="time-input-container">
+                    <div class="time-input-group">
+                        <input type="number" id="hours-input" min="0" value="1">
+                        <label for="hours-input">Giờ</label>
+                    </div>
+                    <div class="time-input-group">
+                        <input type="number" id="minutes-input" min="0" max="59" value="0">
+                        <label for="minutes-input">Phút</label>
+                    </div>
+                </div>
+                <div class="time-quick-buttons">
+                    <button type="button" onclick="addTime(60)">+1h</button>
+                    <button type="button" onclick="addTime(120)">+2h</button>
+                    <button type="button" onclick="addTime(30)">+30m</button>
+                    <button type="button" onclick="addTime(-30)">-30m</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="location">Vị trí Logout</label>
+                <select id="location" required></select>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="cancel-btn" class="btn btn-cancel">Hủy</button>
+                <button type="submit" class="btn btn-confirm">Bắt đầu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="history-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 id="history-modal-title">Lịch sử Logout</h2>
+        <div id="history-content"></div>
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button type="button" id="close-history-btn" class="btn btn-confirm">Đóng</button>
+        </div>
+    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const STORAGE_KEY = 'l2mAccountManagerData_v4';
     const MAX_HISTORY_PER_ACCOUNT = 100;
-    const WARNING_THRESHOLD_1 = 600;
-    const WARNING_THRESHOLD_2 = 300;
+    const WARNING_THRESHOLD_1 = 600; // 10 phút
+    const WARNING_THRESHOLD_2 = 300; // 5 phút
 
     const container = document.getElementById('accounts-container');
     const sessionModal = document.getElementById('session-modal');
@@ -234,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initSound() {
         if (alertSound) return;
         try {
-            alertSound = new Audio('https://cdn.pixabay.com/download/audio/2021/09/01/audio_472b435697.mp3');
+            alertSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3');
             alertSound.volume = 0;
             alertSound.play().catch(e => {});
             setTimeout(() => { alertSound.volume = 0.5; }, 500);
@@ -285,21 +304,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const soundIcon = soundEnabled ? 'fa-volume-high' : 'fa-volume-xmark';
-        
-        const innerContentHTML = `
-            <div class="account-header">
-                <span class="account-name" data-action="rename" data-id="${id}">${name}</span>
-                <input type="text" class="account-name-input" value="${name}" data-id="${id}" style="display:none;"/>
-                <i class="fa-solid ${soundIcon} account-sound-toggle" data-action="toggle-sound" data-id="${id}" title="Bật/Tắt âm báo"></i>
-            </div>
-            ${infoHTML}
-            <div class="account-actions">${actionsHTML}</div>
-        `;
-        
-        const activeSessionClass = isLoggingOut ? 'is-active-session' : '';
-
-        return `<div class="account ${stateClass} ${activeSessionClass}" id="${id}">
-                    <div class="account-inner-content">${innerContentHTML}</div>
+        return `<div class="account ${stateClass}" id="${id}">
+                    <div class="account-header">
+                        <span class="account-name" data-action="rename" data-id="${id}">${name}</span>
+                        <input type="text" class="account-name-input" value="${name}" data-id="${id}" style="display:none;"/>
+                        <i class="fa-solid ${soundIcon} account-sound-toggle" data-action="toggle-sound" data-id="${id}" title="Bật/Tắt âm báo"></i>
+                    </div>
+                    ${infoHTML}
+                    <div class="account-actions">${actionsHTML}</div>
                 </div>`;
     }
     
@@ -327,6 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 activeCount++;
                 const timerElement = document.getElementById(`timer-${account.id}`);
                 const progressElement = document.querySelector(`#${account.id} .progress`);
+                
                 const elapsed = (new Date() - new Date(account.currentSession.startTime)) / 1000;
                 const limit = account.currentSession.timeLimitSeconds;
                 const remaining = limit - elapsed;
@@ -335,27 +348,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (progressElement) progressElement.style.width = `${Math.min((elapsed / limit) * 100, 100)}%`;
 
                 const accountCard = document.getElementById(account.id);
-                if (accountCard) {
-                    let currentState = 'logging-out';
-                    if (remaining <= 0) {
-                        overtimeCount++;
-                        currentState = 'overtime';
-                    } else if (remaining <= WARNING_THRESHOLD_1) {
-                        currentState = 'warning';
-                        // KHÔI PHỤC LOGIC GỌI ÂM THANH
-                        const { alertState } = account.currentSession;
-                        if (remaining <= WARNING_THRESHOLD_1 && !alertState.warned1) {
-                            playAlertSound(account); 
-                            alertState.warned1 = true;
-                        }
-                        if (remaining <= WARNING_THRESHOLD_2 && !alertState.warned2) {
-                            playAlertSound(account); 
-                            alertState.warned2 = true;
-                        }
+                let currentState = 'logging-out';
+                if (remaining <= 0) {
+                    overtimeCount++;
+                    currentState = 'overtime';
+                } else if (remaining <= WARNING_THRESHOLD_1) {
+                    currentState = 'warning';
+                    const { alertState } = account.currentSession;
+                    if (remaining <= WARNING_THRESHOLD_1 && !alertState.warned1) {
+                        playAlertSound(account);
+                        alertState.warned1 = true;
                     }
-                    // Cập nhật lại class một cách chính xác
-                    accountCard.className = `account is-active-session ${currentState}`;
+                    if (remaining <= WARNING_THRESHOLD_2 && !alertState.warned2) {
+                        playAlertSound(account);
+                        alertState.warned2 = true;
+                    }
                 }
+                if (!accountCard.classList.contains(currentState)) accountCard.className = `account ${currentState}`;
             }
         });
         updateStats(activeCount, overtimeCount);
@@ -363,7 +372,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function updateStats(active = null, overtime = null) {
         if (active === null) active = accountsData.filter(acc => acc.currentSession?.isActive).length;
-        if (overtime === null) overtime = accountsData.filter(acc => acc.currentSession?.isActive && ((new Date() - new Date(acc.currentSession.startTime)) / 1000) >= acc.currentSession.timeLimitSeconds).length;
+        if (overtime === null) overtime = accountsData.filter(acc => {
+            if (!acc.currentSession?.isActive) return false;
+            return ((new Date() - new Date(acc.currentSession.startTime)) / 1000) >= acc.currentSession.timeLimitSeconds;
+        }).length;
         document.getElementById('total-accounts-stat').textContent = accountsData.length;
         document.getElementById('active-logout-stat').textContent = active;
         document.getElementById('overtime-stat').textContent = overtime;
@@ -454,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
         hoursInput.value = Math.floor(totalMinutes / 60);
         minutesInput.value = totalMinutes % 60;
     }
-    window.addTime = addTime;
+    window.addTime = addTime; // Expose to global scope for onclick
 
     function startSession(id, timeLimitSeconds, location) {
         initSound();
@@ -468,7 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function endSession(id) {
         const account = findAccount(id);
-        if (!account?.currentSession) return;
+        if (!account) return;
         const session = account.currentSession;
         account.history.push({
             startTime: session.startTime, endTime: new Date().toISOString(),
@@ -498,7 +510,9 @@ document.addEventListener('DOMContentLoaded', () => {
             account.name = newName;
             saveData();
         }
-        rerenderAccount(id);
+        nameSpan.style.display = 'block';
+        nameInput.style.display = 'none';
+        rerenderAccount(id); // Rerender to show the final name
     }
 
     function showHistoryModal(id) {
@@ -533,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAllAccounts();
         setInterval(globalTimerUpdate, 1000);
     }
-    window.addNewAccount = addNewAccount;
+    window.addNewAccount = addNewAccount; // Expose globally for onclick
     init();
 });
 </script>

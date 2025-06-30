@@ -70,6 +70,7 @@
     .account-sound-toggle:hover { color: var(--text-dark); }
     .account-name-input { font-size: 18px; font-weight: 600; width: 100%; border: 2px solid var(--logging-out-color); border-radius: 8px; padding: 8px; }
     .account-info, .account-status { font-size: 14px; color: var(--text-light); background: #f7fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .account-status { line-height: 1.5; } /* Added for better spacing */
     .progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
     .progress { height: 100%; width: 0%; background: var(--logging-out-color); border-radius: 4px; transition: width 0.5s ease; }
     .account.warning .progress { background: var(--warning-color); }
@@ -221,11 +222,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 accountsData = saved.accounts;
                 savedLocations = saved.locations || [];
             } else {
-                accountsData = Array.from({ length: 10 }, (_, i) => createDefaultAccount(i + 1));
+                // [CẢI TIẾN] Thay đổi số tài khoản mặc định từ 10 thành 1
+                accountsData = Array.from({ length: 1 }, (_, i) => createDefaultAccount(i + 1));
                 savedLocations = ['Đảo Giao Tranh', 'Pháo Đài', 'Antharas', 'Cruma', 'Đền Undine'];
             }
         } catch (e) {
-             accountsData = Array.from({ length: 10 }, (_, i) => createDefaultAccount(i + 1));
+             // [CẢI TIẾN] Thay đổi số tài khoản mặc định từ 10 thành 1
+             accountsData = Array.from({ length: 1 }, (_, i) => createDefaultAccount(i + 1));
              savedLocations = ['Đảo Giao Tranh', 'Pháo Đài', 'Antharas', 'Cruma', 'Đền Undine'];
         }
         migrateData();
@@ -327,10 +330,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const h = Math.floor(totalSeconds / 3600);
         const m = Math.floor((totalSeconds % 3600) / 60);
         const s = Math.floor(totalSeconds % 60);
-        return `${h > 0 ? h + ' giờ ' : ''}${m > 0 ? m + ' phút ' : ''}${s} giây`;
+        let parts = [];
+        if (h > 0) parts.push(h + ' giờ');
+        if (m > 0) parts.push(m + ' phút');
+        if (s > 0 || parts.length === 0) parts.push(s + ' giây');
+        return parts.join(' ');
     };
 
-    const generateTimerText = (elapsed, limit) => elapsed >= limit ? `Trạng thái: <strong style="color:var(--overtime-color)">Đã lố ${formatTime(elapsed - limit)}</strong>` : `Còn lại: <strong>${formatTime(limit - elapsed)}</strong>`;
+    // [CẢI TIẾN] Hiển thị cả thời gian đã chạy và thời gian còn lại
+    const generateTimerText = (elapsed, limit) => {
+        const elapsedFormatted = formatTime(elapsed);
+        if (elapsed >= limit) {
+            return `Đã chạy: <strong>${elapsedFormatted}</strong><br>Trạng thái: <strong style="color:var(--overtime-color)">Lố ${formatTime(elapsed - limit)}</strong>`;
+        } else {
+            return `Đã chạy: <strong>${elapsedFormatted}</strong><br>Còn lại: <strong>${formatTime(limit - elapsed)}</strong>`;
+        }
+    };
 
     function globalTimerUpdate() {
         let activeCount = 0, overtimeCount = 0;
